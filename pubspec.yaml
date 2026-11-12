@@ -1,0 +1,43 @@
+name: car_parts
+description: "A Flutter application for buying and selling car spare parts."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^2.0.0
+  supabase_flutter: ^2.8.0
+  qr_flutter: ^4.1.0
+  image_picker: ^1.0.7
+  fl_chart: ^1.3.1
+  url_launcher: ^6.2.0
+  http: ^1.2.0
+  flutter_svg: ^2.0.10
+  flutter_animate: ^4.5.0
+  geolocator: ^14.1.2
+  pay: ^4.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/g-logo-v6-machined.svg
+    - assets/deepseek_svg_20261109_7fc743.svg
+    - assets/deepseek_svg_20261109_8dfb70.svg
+    - assets/deepseek_svg_20261109_2ea310.svg
+    - assets/Google_Pay-Logo.wine.png
+    - assets/apple-pay-acceptance-mark-logo-png_seeklogo-480102.png
+    - assets/mastercard-visa-cards-logos-icons-701751695036083sdqsk5ncvn.png
+
+
+  
