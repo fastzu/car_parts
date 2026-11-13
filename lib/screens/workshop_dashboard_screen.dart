@@ -1,11 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../app_theme.dart';
 
 class WorkshopDashboardScreen extends StatefulWidget {
@@ -28,8 +24,6 @@ class _WorkshopDashboardScreenState extends State<WorkshopDashboardScreen> {
 
   DateTime _selectedAvailableDate = DateTime.now();
 
-  String _selectedPaymentMethod = 'Credit Card';
-
   @override
   void initState() {
     super.initState();
@@ -40,7 +34,6 @@ class _WorkshopDashboardScreenState extends State<WorkshopDashboardScreen> {
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 
-  // 🌟 معالجة التوقيت ليظهر بالتوقيت المحلي الصحيح ودون أي تفاوت زمني غير منطقي
   String _formatLocalizedDateTime(String? dateStr, String? timeStr) {
     if (dateStr == null) return '';
     try {
@@ -176,7 +169,6 @@ class _WorkshopDashboardScreenState extends State<WorkshopDashboardScreen> {
     }
   }
 
-  // 🌟 نافذة اقتراح موعد بديل من قِبل الميكانيكي
   void _showSuggestRescheduleDialog(String appointmentId) {
     DateTime suggestedDate = DateTime.now().add(const Duration(days: 1));
     TimeOfDay suggestedTime = const TimeOfDay(hour: 10, minute: 0);
@@ -273,283 +265,6 @@ class _WorkshopDashboardScreenState extends State<WorkshopDashboardScreen> {
         },
       ),
     );
-  }
-
-  void _showPaymentOptionsDialog(
-      String appointmentId, double currentTotalAmount) {
-    _selectedPaymentMethod = 'Credit Card';
-    double commission =
-        currentTotalAmount > 0 ? (currentTotalAmount * 0.1) : 1.00;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          void handlePaymentMethodChange(String? value) {
-            if (value == null) return;
-            if (value == 'Google Pay' || value == 'Apple Pay') {
-              ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('$value غير متاح حالياً')));
-              return;
-            }
-            setDialogState(() => _selectedPaymentMethod = value);
-          }
-
-          return AlertDialog(
-            backgroundColor: AppTheme.surface,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text('دفع عمولة المنصة المطلوبة ($commission د.أ)',
-                style: const TextStyle(color: Colors.white, fontSize: 15)),
-            content: SingleChildScrollView(
-              child: RadioGroup<String>(
-                groupValue: _selectedPaymentMethod,
-                onChanged: handlePaymentMethodChange,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('اختر وسيلة دفع العمولة المستحقة للسيستم:',
-                        style: TextStyle(
-                            color: AppTheme.textSecondary, fontSize: 12)),
-                    const SizedBox(height: 12),
-                    _buildPaymentOption(
-                      title: 'بطاقة الائتمان (Credit Card)',
-                      subtitle: 'Visa / Mastercard',
-                      icon: Icons.credit_card,
-                      iconColor: Colors.blueAccent,
-                      value: 'Credit Card',
-                      groupValue: _selectedPaymentMethod,
-                      onChanged: handlePaymentMethodChange,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildPaymentOption(
-                      title: 'CliQ (كليك)',
-                      subtitle: 'Alias: ghayarak',
-                      icon: Icons.flash_on,
-                      iconColor: Colors.amber,
-                      value: 'CliQ',
-                      groupValue: _selectedPaymentMethod,
-                      onChanged: handlePaymentMethodChange,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child:
-                    const Text('إلغاء', style: TextStyle(color: Colors.grey)),
-              ),
-              ElevatedButton(
-                style:
-                    ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-                onPressed: () {
-                  Navigator.pop(context);
-                  if (_selectedPaymentMethod == 'CliQ') {
-                    _showCliQDetailsDialog(commission);
-                  } else {
-                    _processPaymentViaAPI(commission, _selectedPaymentMethod);
-                  }
-                },
-                child: const Text('ادفع الآن',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildPaymentOption({
-    required String title,
-    required String subtitle,
-    IconData? icon,
-    Color? iconColor,
-    required String value,
-    required String groupValue,
-    required ValueChanged<String?> onChanged,
-  }) {
-    final bool isSelected = value == groupValue;
-    return GestureDetector(
-      onTap: () => onChanged(value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppTheme.background,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-              color: isSelected ? AppTheme.primary : AppTheme.border,
-              width: isSelected ? 2 : 1),
-        ),
-        child: Row(
-          children: [
-            Icon(icon ?? Icons.payment,
-                color: iconColor ?? Colors.white, size: 26),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12)),
-                  Text(subtitle,
-                      style: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 10)),
-                ],
-              ),
-            ),
-            Radio<String>(
-              value: value,
-              activeColor: AppTheme.primary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCliQDetailsDialog(double commissionAmount) {
-    final TextEditingController refController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.flash_on, color: Colors.amber, size: 28),
-            const SizedBox(width: 10),
-            Text('تحويل العمولة ($commissionAmount د.أ) عبر CliQ',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-                'يرجى تحويل مبلغ العمولة إلى معرف CliQ (الـ Alias) التالي:',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.background,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('ghayarak',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold)),
-                  IconButton(
-                    icon: const Icon(Icons.copy, color: Colors.amber, size: 18),
-                    onPressed: () {
-                      Clipboard.setData(const ClipboardData(text: 'ghayarak'));
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('تم نسخ الـ Alias بنجاح'),
-                          backgroundColor: Colors.green));
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: refController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'رقم مرجع الحوالة أو اسم الحساب المحول منه',
-                labelStyle: const TextStyle(
-                    color: AppTheme.textSecondary, fontSize: 11),
-                filled: true,
-                fillColor: AppTheme.background,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-            onPressed: () async {
-              if (refController.text.trim().isEmpty) return;
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('تم إرسال إشعار الدفع للإدارة للمراجعة'),
-                  backgroundColor: Colors.green));
-            },
-            child: const Text('تأكيد إرسال الحوالة',
-                style: TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _processPaymentViaAPI(
-      double amount, String paymentMethod) async {
-    setState(() => _isLoading = true);
-    try {
-      final url = Uri.parse(
-          'https://nsdymdqrlvbhvurwptvq.supabase.co/functions/v1/create-payment');
-      const String anonKey =
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zZHltZHFybHZiaHZ1cndwdHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNTQzOTcsImV4cCI6MjEwODkzMDM5N30.IVrWoj0WcapQn9cQS4NYlqKtZI8c4VCq3dPg3BwF0zY';
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': anonKey,
-          'Authorization': 'Bearer $anonKey',
-        },
-        body: utf8.encode(jsonEncode({
-          'user_id': Supabase.instance.client.auth.currentUser!.id,
-          'amount': amount.toStringAsFixed(2),
-          'payment_method': paymentMethod,
-          'plan_name': 'Workshop Commission Payment',
-        })),
-      );
-
-      setState(() => _isLoading = false);
-
-      if (response.statusCode == 200) {
-        final resData = jsonDecode(response.body);
-        if (resData['redirect_url'] != null) {
-          final bankUrl = Uri.parse(resData['redirect_url']);
-          if (await canLaunchUrl(bankUrl)) {
-            await launchUrl(bankUrl, mode: LaunchMode.externalApplication);
-          }
-        }
-      } else {
-        throw 'خطأ في معالجة البوابة';
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('تم تسجيل عملية الدفع بنجاح'),
-          backgroundColor: AppTheme.success));
-    }
   }
 
   void _showAvailabilitySettings() async {
@@ -788,7 +503,6 @@ class _WorkshopDashboardScreenState extends State<WorkshopDashboardScreen> {
                               final apptTime =
                                   appt['appointment_time']?.toString() ?? '';
 
-                              // 🌟 عرض التوقيت المحلي بدقة
                               final String formattedDateTime =
                                   _formatLocalizedDateTime(apptDate, apptTime);
 
@@ -812,9 +526,6 @@ class _WorkshopDashboardScreenState extends State<WorkshopDashboardScreen> {
                                   .length;
                               bool isThisDateFull =
                                   acceptedOnThisApptDate >= maxCapacity;
-
-                              // 🌟 هل انتهت السيارة وجاهزة؟
-                              final bool isCompleted = status == 'completed';
 
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 14),
@@ -891,14 +602,15 @@ class _WorkshopDashboardScreenState extends State<WorkshopDashboardScreen> {
                                                   ? () =>
                                                       _showSuggestRescheduleDialog(
                                                           appt['id'].toString())
-                                                  : () => _updateAppointmentStatus(
-                                                      appt['id'].toString(),
-                                                      'accepted',
-                                                      'accepted'), // 🌟 قبول مباشر بدون إدخال سعر
+                                                  : () =>
+                                                      _updateAppointmentStatus(
+                                                          appt['id'].toString(),
+                                                          'accepted',
+                                                          'accepted'),
                                               child: Text(
                                                   isThisDateFull
                                                       ? 'اكتمل العدد - اقتراح موعد آخر'
-                                                      : 'قبول', // 🌟 كلمة قبول فقط
+                                                      : 'قبول',
                                                   style: const TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 11)),
@@ -966,40 +678,6 @@ class _WorkshopDashboardScreenState extends State<WorkshopDashboardScreen> {
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 8),
-
-                                      // 🌟 زر دفع العمولة (مقفل تماماً ولن يتفعل إلا بعد الضغط على "تم الانتهاء وجاهزة")
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: isCompleted
-                                                ? AppTheme.primary
-                                                : Colors.grey.shade800,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 8),
-                                          ),
-                                          onPressed: isCompleted
-                                              ? () => _showPaymentOptionsDialog(
-                                                  appt['id'].toString(),
-                                                  totalAmt)
-                                              : null,
-                                          icon: const Icon(Icons.payment,
-                                              size: 16, color: Colors.white),
-                                          label: Text(
-                                            isCompleted
-                                                ? 'دفع عمولة المنصة المستحقة'
-                                                : 'دفع العمولة (يُفتح بعد إتمام التصليح وجاهزيتها)',
-                                            style: TextStyle(
-                                              color: isCompleted
-                                                  ? Colors.white
-                                                  : Colors.grey.shade400,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
                                     ] else if (status == 'completed') ...[
                                       Container(
                                         width: double.infinity,
@@ -1017,30 +695,6 @@ class _WorkshopDashboardScreenState extends State<WorkshopDashboardScreen> {
                                                   color: AppTheme.success,
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.bold)),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-
-                                      // 🌟 زر دفع العمولة يصبح متاحاً وفعالاً بعد إتمام الطلب
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                              backgroundColor: AppTheme.primary,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 8)),
-                                          onPressed: () =>
-                                              _showPaymentOptionsDialog(
-                                                  appt['id'].toString(),
-                                                  totalAmt),
-                                          icon: const Icon(Icons.payment,
-                                              size: 16, color: Colors.white),
-                                          label: const Text(
-                                              'دفع عمولة المنصة المستحقة',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 12)),
                                         ),
                                       ),
                                     ] else if (status == 'rejected') ...[

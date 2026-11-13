@@ -25,7 +25,7 @@ import 'book_workshop_screen.dart';
 import 'workshop_dashboard_screen.dart';
 import 'notifications_screen.dart';
 import 'my_appointments_screen.dart';
-import 'wallet_screen.dart'; // 🌟 استيراد شاشة المحفظة الجديدة
+import 'wallet_screen.dart';
 import '../app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -1477,7 +1477,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: EdgeInsets.symmetric(vertical: 10),
                   child: Divider(color: Colors.white12),
                 ),
-                // 🌟 إضافة رابط المحفظة المالية للتاجر والورشة والونش
                 if (_userRole == 'mechanic' ||
                     _userRole == 'towing' ||
                     _userRole == 'admin')
@@ -1776,7 +1775,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return SizedBox(
-      height: 300,
+      height: 345,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -1842,11 +1841,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             imgUrl.isNotEmpty
                                 ? Image.network(imgUrl,
-                                    height: 135,
+                                    height: 125,
                                     width: double.infinity,
                                     fit: BoxFit.cover)
                                 : Container(
-                                    height: 135,
+                                    height: 125,
                                     color: AppTheme.background,
                                     child: const Icon(Icons.image,
                                         color: Colors.grey, size: 40)),
@@ -1872,7 +1871,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         Padding(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: const EdgeInsets.all(10.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1925,12 +1924,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 10),
                               Row(
                                 children: [
                                   Expanded(
                                     child: SizedBox(
-                                      height: 36,
+                                      height: 34,
                                       child: ElevatedButton.icon(
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: isRevealed
@@ -1979,7 +1978,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   SizedBox(
-                                    height: 36,
+                                    height: 34,
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AppTheme.primary,
@@ -2010,6 +2009,41 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 8),
+                              // 🌟 زر الشراء الخارجي مطابق للزر الداخلي تماماً (لون أخضر + أيقونة عربة تسوق مع سهم + نص اشتري الآن)
+                              SizedBox(
+                                width: double.infinity,
+                                height: 34,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.success,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  icon: const Icon(Icons.add_shopping_cart,
+                                      size: 16, color: Colors.white),
+                                  label: const Text(
+                                    'اشتري الآن (Buy Now)',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ProductDetailScreen(
+                                                product: product),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
                             ],
                           ),
